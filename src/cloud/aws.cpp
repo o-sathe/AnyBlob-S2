@@ -357,7 +357,7 @@ unique_ptr<utils::DataVector<uint8_t>> AWS::buildRequest(network::HttpRequest& r
         }
     }
 
-    AWSSigner::StringToSign stringToSign = {.request = request, .region = _settings.region, .service = "s3", .requestSHA = "", .signedHeaders = "", .payloadHash = ""};
+    AWSSigner::StringToSign stringToSign = {request, _settings.region, "s3", "", "", ""};
     AWSSigner::encodeCanonicalRequest(request, stringToSign, bodyData, bodyLength);
     string httpHeader = network::HttpRequest::getRequestMethod(request.method);
     httpHeader += " ";

@@ -19,7 +19,7 @@ bool PollSocket::send(const Request& req, int32_t msg_flags)
 // Prepare a submission send
 {
     if (req.event != EventType::write) return false;
-    enqueue(req.fd, POLLOUT, RequestInfo{.request = const_cast<Request*>(&req), .timeout = chrono::time_point<chrono::steady_clock>::max(), .flags = msg_flags});
+    enqueue(req.fd, POLLOUT, RequestInfo{const_cast<Request*>(&req), chrono::time_point<chrono::steady_clock>::max(), msg_flags});
     return true;
 }
 //---------------------------------------------------------------------------
@@ -27,7 +27,7 @@ bool PollSocket::recv(Request& req, int32_t msg_flags)
 // Prepare a submission recv
 {
     if (req.event != EventType::read) return false;
-    enqueue(req.fd, POLLIN, RequestInfo{.request = &req, .timeout = chrono::time_point<chrono::steady_clock>::max(), .flags = msg_flags});
+    enqueue(req.fd, POLLIN, RequestInfo{&req, chrono::time_point<chrono::steady_clock>::max(), msg_flags});
     return true;
 }
 //---------------------------------------------------------------------------
@@ -35,7 +35,7 @@ bool PollSocket::send_to(Request& req, std::chrono::milliseconds timeout, int32_
 // Prepare a submission send with timeout
 {
     if (req.event != EventType::write) return false;
-    enqueue(req.fd, POLLOUT, RequestInfo{.request = const_cast<Request*>(&req), .timeout = chrono::steady_clock::now() + timeout, .flags = msg_flags});
+    enqueue(req.fd, POLLOUT, RequestInfo{const_cast<Request*>(&req), chrono::steady_clock::now() + timeout, msg_flags});
     return true;
 }
 //---------------------------------------------------------------------------
@@ -43,7 +43,7 @@ bool PollSocket::recv_to(Request& req, std::chrono::milliseconds timeout, int32_
 // Prepare a submission recv with timeout
 {
     if (req.event != EventType::read) return false;
-    enqueue(req.fd, POLLIN, RequestInfo{.request = &req, .timeout = chrono::steady_clock::now() + timeout, .flags = msg_flags});
+    enqueue(req.fd, POLLIN, RequestInfo{&req, chrono::steady_clock::now() + timeout, msg_flags});
     return true;
 }
 //---------------------------------------------------------------------------
@@ -113,7 +113,7 @@ PollSocket::Request* PollSocket::complete()
 void PollSocket::enqueue(int fd, short events, RequestInfo req)
 // Implement the fd into our submission queue
 {
-    pollfds.emplace_back(fd, events);
+    pollfds.push_back({fd, events, 0});
     fdToRequest.emplace(fd, req);
     ++submitted;
 }

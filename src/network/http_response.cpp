@@ -1,4 +1,5 @@
 #include "network/http_response.hpp"
+#include "utils/compat.hpp"
 #include "utils/data_vector.hpp"
 #include <map>
 //---------------------------------------------------------------------------
@@ -41,9 +42,9 @@ HttpResponse HttpResponse::deserialize(string_view data)
         if (firstLine) {
             firstLine = false;
             // the http type
-            if (line.starts_with(strHttp1_0)) {
+            if (compat::startsWith(line, strHttp1_0)) {
                 response.type = Type::HTTP_1_0;
-            } else if (line.starts_with(strHttp1_1)) {
+            } else if (compat::startsWith(line, strHttp1_1)) {
                 response.type = Type::HTTP_1_1;
             } else {
                 throw runtime_error("Invalid HttpResponse: Needs to be a HTTP type 1.0 or 1.1!");
@@ -56,7 +57,7 @@ HttpResponse HttpResponse::deserialize(string_view data)
             response.code = Code::UNKNOWN;
             for (auto code = static_cast<uint8_t>(Code::OK_200); code <= static_cast<uint8_t>(Code::SLOW_DOWN_503); code++) {
                 const string_view responseCode = getResponseCode(static_cast<Code>(code));
-                if (line.starts_with(responseCode)) {
+                if (compat::startsWith(line, responseCode)) {
                     response.code = static_cast<Code>(code);
                 }
             }

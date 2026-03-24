@@ -8,6 +8,7 @@
 #include "cloud/oracle.hpp"
 #include "network/config.hpp"
 #include "network/tasked_send_receiver.hpp"
+#include "utils/compat.hpp"
 #include "utils/data_vector.hpp"
 #include <fstream>
 #include <string>
@@ -29,7 +30,7 @@ bool Provider::testEnviornment = false;
 // Get the dir name without the path
 string Provider::getRemoteParentDirectory(string fileName) noexcept {
     for (auto i = 0u; i < remoteFileCount; i++) {
-        if (fileName.starts_with(remoteFile[i])) {
+        if (compat::startsWith(fileName, remoteFile[i])) {
             fileName = fileName.substr(remoteFile[i].size());
             auto pos = fileName.find('/');
             fileName = fileName.substr(pos + 1);
@@ -44,7 +45,7 @@ bool Provider::isRemoteFile(string_view fileName) noexcept
 // Is it a remote file?
 {
     for (auto i = 0u; i < remoteFileCount; i++)
-        if (fileName.starts_with(remoteFile[i]))
+        if (compat::startsWith(fileName, remoteFile[i]))
             return true;
 
     return false;
@@ -56,7 +57,7 @@ Provider::RemoteInfo Provider::getRemoteInfo(const string& fileName) {
     Provider::RemoteInfo info;
     info.provider = CloudService::Local;
     for (auto i = 0u; i < remoteFileCount; i++) {
-        if (fileName.starts_with(remoteFile[i])) {
+        if (compat::startsWith(fileName, remoteFile[i])) {
             // Handle cloud provider the same except MinIO includes endpoint
             auto sub = fileName.substr(remoteFile[i].size());
             if (!remoteFile[i].compare("http://") || !remoteFile[i].compare("https://") || !remoteFile[i].compare("minio://")) {

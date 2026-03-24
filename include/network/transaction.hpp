@@ -2,6 +2,7 @@
 #include "cloud/provider.hpp"
 #include "network/message_result.hpp"
 #include "network/original_message.hpp"
+#include "utils/compat.hpp"
 #include <atomic>
 #include <cassert>
 #include <memory>
@@ -224,14 +225,14 @@ class Transaction {
             for (uint16_t i = 1; i <= parts; i++) {
                 auto finishMultipart = [&callback, &initalRequestResult, position, remotePath, traceId, i, parts, this](network::MessageResult& result) {
                     _provider->getSecret();
-                    if (!result.success()) [[unlikely]] {
+                    if (!result.success()) ANYBLOB_UNLIKELY {
                         _multipartUploads[position].errorMessageId = i - 1;
                         _multipartUploads[position].state = MultipartUpload::State::Aborted;
                     } else {
                         _multipartUploads[position].eTags[i - 1] = _provider->getETag(std::string_view(reinterpret_cast<const char*>(result.getData()), result.getOffset()));
                     }
                     if (_multipartUploads[position].outstanding.fetch_sub(1) == 1) {
-                        if (_multipartUploads[position].state != MultipartUpload::State::Aborted) [[likely]] {
+                        if (_multipartUploads[position].state != MultipartUpload::State::Aborted) ANYBLOB_LIKELY {
                             auto contentData = std::make_unique<std::string>();
                             auto content = contentData.get();
                             auto finished = [&callback, &initalRequestResult, contentPtr = move(contentData), this](network::MessageResult& result) mutable {
@@ -334,7 +335,8 @@ class Transaction {
         }
 
         /// Equality
-        constexpr bool operator==(const Iterator& other) const { return it == other.it; }
+        bool operator==(const Iterator& other) const { return it == other.it; }
+        bool operator!=(const Iterator& other) const { return it != other.it; }
 
         friend Transaction;
     };
@@ -382,7 +384,8 @@ class Transaction {
         }
 
         /// Equality
-        constexpr bool operator==(const ConstIterator& other) const { return it == other.it; }
+        bool operator==(const ConstIterator& other) const { return it == other.it; }
+        bool operator!=(const ConstIterator& other) const { return it != other.it; }
 
         friend Transaction;
     };

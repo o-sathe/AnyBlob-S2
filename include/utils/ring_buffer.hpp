@@ -1,9 +1,9 @@
 #pragma once
+#include "utils/compat.hpp"
 #include <atomic>
 #include <memory>
 #include <mutex>
 #include <optional>
-#include <span>
 //---------------------------------------------------------------------------
 // AnyBlob - Universal Cloud Object Storage Library
 // Dominik Durner, 2021
@@ -63,7 +63,7 @@ class RingBuffer {
 
     public:
     /// The constructor
-    constexpr explicit RingBuffer(uint64_t size) : _buffer(new T[size]()), _size(size) {}
+    constexpr explicit RingBuffer(uint64_t size) : _buffer(new T[size]()), _size(size), _insert{}, _seen{} {}
 
     /// Insert a tuple into buffer
     template <bool wait = false>
@@ -85,7 +85,7 @@ class RingBuffer {
 
     /// Insert a span into buffer
     template <bool wait = false>
-    [[nodiscard]] constexpr uint64_t insertAll(std::span<T> tuples) {
+    [[nodiscard]] constexpr uint64_t insertAll(compat::Span<T> tuples) {
         while (true) {
             std::unique_lock lock(_insert.mutex);
             auto seenHead = _seen.commited.load();

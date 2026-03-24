@@ -52,12 +52,12 @@ class IOUringSocket : public Socket {
     }
     /// Prepare a submission send with timeout
     bool send_to(Request& req, std::chrono::milliseconds timeout, int32_t msg_flags = 0) override {
-        req.kernelTimeout = __kernel_timespec(0, std::chrono::duration_cast<std::chrono::nanoseconds>(timeout).count());
+        req.kernelTimeout = {0, std::chrono::duration_cast<std::chrono::nanoseconds>(timeout).count()};
         return send_prep_to(req, msg_flags);
     }
     /// Prepare a submission recv with timeout
     bool recv_to(Request& req, std::chrono::milliseconds timeout, int32_t msg_flags = 0) override {
-        req.kernelTimeout = __kernel_timespec(0, std::chrono::duration_cast<std::chrono::nanoseconds>(timeout).count());
+        req.kernelTimeout = {0, std::chrono::duration_cast<std::chrono::nanoseconds>(timeout).count()};
         return recv_prep_to(req, msg_flags);
     }
 

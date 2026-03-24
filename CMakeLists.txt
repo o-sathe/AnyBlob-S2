@@ -23,7 +23,7 @@ find_package(OpenSSL REQUIRED)
 # ---------------------------------------------------------------------------
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -33,10 +33,14 @@ set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -fuse-ld=lld")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=lld")
 
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -Wall -Wextra -Wold-style-cast -Woverloaded-virtual -Wmissing-declarations -Wno-unqualified-std-cast-call -Wvla -Wconversion -Wextra-semi -Werror")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -Wall -Wextra -Wold-style-cast -Woverloaded-virtual -Wmissing-declarations -Wno-unqualified-std-cast-call -Wvla -Wconversion -Wextra-semi -Werror")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wextra -Wold-style-cast -Woverloaded-virtual -Wmissing-declarations -Wno-unqualified-std-cast-call -Wvla -Wconversion -Wextra-semi -Werror")
-set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wold-style-cast -Woverloaded-virtual -Wmissing-declarations -Wno-unqualified-std-cast-call -Wvla -Wconversion -Wextra-semi -Werror -coverage")
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(ANYBLOB_CLANG_WARNINGS "-Wno-unqualified-std-cast-call")
+endif()
+
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -Wall -Wextra -Wold-style-cast -Woverloaded-virtual -Wmissing-declarations ${ANYBLOB_CLANG_WARNINGS} -Wvla -Wconversion -Wextra-semi -Werror")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -Wall -Wextra -Wold-style-cast -Woverloaded-virtual -Wmissing-declarations ${ANYBLOB_CLANG_WARNINGS} -Wvla -Wconversion -Wextra-semi -Werror")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -Wextra -Wold-style-cast -Woverloaded-virtual -Wmissing-declarations ${ANYBLOB_CLANG_WARNINGS} -Wvla -Wconversion -Wextra-semi -Werror")
+set(CMAKE_CXX_FLAGS_COVERAGE "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wextra -Wold-style-cast -Woverloaded-virtual -Wmissing-declarations ${ANYBLOB_CLANG_WARNINGS} -Wvla -Wconversion -Wextra-semi -Werror -coverage")
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
    # Default to Release build type, similar to Makefile

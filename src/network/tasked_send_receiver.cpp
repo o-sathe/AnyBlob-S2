@@ -43,7 +43,7 @@ bool TaskedSendReceiverGroup::send(OriginalMessage* msg)
     return (_submissions.insert(msg) != ~0ull);
 }
 //---------------------------------------------------------------------------
-bool TaskedSendReceiverGroup::send(span<OriginalMessage*> msgs)
+bool TaskedSendReceiverGroup::send(compat::Span<OriginalMessage*> msgs)
 // Adds a message to the submission queue
 {
     return (_submissions.insertAll(msgs) != ~0ull);

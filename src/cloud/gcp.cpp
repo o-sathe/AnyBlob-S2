@@ -101,7 +101,7 @@ unique_ptr<utils::DataVector<uint8_t>> GCP::getRequest(const string& filePath, c
     }
     request.headers.emplace("Content-Length", "0");
 
-    GCPSigner::StringToSign stringToSign = {.region = _settings.region, .service = "storage", .signedHeaders = ""};
+    GCPSigner::StringToSign stringToSign = {_settings.region, "storage", ""};
     request.path = GCPSigner::createSignedRequest(_secret->serviceAccountEmail, _secret->privateKey, request, stringToSign);
 
     string httpHeader = network::HttpRequest::getRequestMethod(request.method);
@@ -136,7 +136,7 @@ unique_ptr<utils::DataVector<uint8_t>> GCP::putRequestGeneric(const string& file
     request.headers.emplace("Date", date);
     request.headers.emplace("Content-Length", to_string(object.size()));
 
-    GCPSigner::StringToSign stringToSign = {.region = _settings.region, .service = "storage", .signedHeaders = ""};
+    GCPSigner::StringToSign stringToSign = {_settings.region, "storage", ""};
     request.path = GCPSigner::createSignedRequest(_secret->serviceAccountEmail, _secret->privateKey, request, stringToSign);
 
     string httpHeader = network::HttpRequest::getRequestMethod(request.method);
@@ -168,7 +168,7 @@ unique_ptr<utils::DataVector<uint8_t>> GCP::deleteRequestGeneric(const string& f
     request.headers.emplace("Host", getAddress());
     request.headers.emplace("Content-Length", "0");
 
-    GCPSigner::StringToSign stringToSign = {.region = _settings.region, .service = "storage", .signedHeaders = ""};
+    GCPSigner::StringToSign stringToSign = {_settings.region, "storage", ""};
     request.path = GCPSigner::createSignedRequest(_secret->serviceAccountEmail, _secret->privateKey, request, stringToSign);
 
     string httpHeader = network::HttpRequest::getRequestMethod(request.method);
@@ -197,7 +197,7 @@ unique_ptr<utils::DataVector<uint8_t>> GCP::createMultiPartRequest(const string&
     request.headers.emplace("Date", date);
     request.headers.emplace("Content-Length", "0");
 
-    GCPSigner::StringToSign stringToSign = {.region = _settings.region, .service = "storage", .signedHeaders = ""};
+    GCPSigner::StringToSign stringToSign = {_settings.region, "storage", ""};
     request.path = GCPSigner::createSignedRequest(_secret->serviceAccountEmail, _secret->privateKey, request, stringToSign);
 
     string httpHeader = network::HttpRequest::getRequestMethod(request.method);
@@ -236,7 +236,7 @@ unique_ptr<utils::DataVector<uint8_t>> GCP::completeMultiPartRequest(const strin
     request.headers.emplace("Date", date);
     request.headers.emplace("Content-Length", to_string(content.size()));
 
-    GCPSigner::StringToSign stringToSign = {.region = _settings.region, .service = "storage", .signedHeaders = ""};
+    GCPSigner::StringToSign stringToSign = {_settings.region, "storage", ""};
     request.path = GCPSigner::createSignedRequest(_secret->serviceAccountEmail, _secret->privateKey, request, stringToSign);
 
     string httpHeaderMessage = network::HttpRequest::getRequestMethod(request.method);

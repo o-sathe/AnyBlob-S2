@@ -1,6 +1,7 @@
 #include "network/transaction.hpp"
 #include "network/original_message.hpp"
 #include "network/tasked_send_receiver.hpp"
+#include "utils/compat.hpp"
 //---------------------------------------------------------------------------
 // AnyBlob - Universal Cloud Object Storage Library
 // Dominik Durner, 2023
@@ -66,7 +67,7 @@ bool Transaction::processAsync(TaskedSendReceiverGroup& group)
     if (submissions.empty())
         return true;
     auto success = group.send(submissions);
-    if (!success) [[unlikely]] {
+    if (!success) ANYBLOB_UNLIKELY {
         // If the send failed, we need to reset the message counter and the multipart uploads
         _messageCounter = previousCounter;
 

@@ -49,6 +49,24 @@ class Socket {
         /// The kernel async interface timeout
         __kernel_timespec kernelTimeout = {.tv_sec = 0, .tv_nsec = 0};
 #endif
+        static Request forRecv(uint8_t* buf, int64_t len, int32_t fildes, MessageTask* task) {
+            Request r{};
+            r.data.data = buf;
+            r.length = len;
+            r.fd = fildes;
+            r.event = EventType::read;
+            r.messageTask = task;
+            return r;
+        }
+        static Request forSend(const uint8_t* buf, int64_t len, int32_t fildes, MessageTask* task) {
+            Request r{};
+            r.data.cdata = buf;
+            r.length = len;
+            r.fd = fildes;
+            r.event = EventType::write;
+            r.messageTask = task;
+            return r;
+        }
     };
 
     public:

@@ -3,6 +3,7 @@
 #include <memory>
 #include <mutex>
 #include <shared_mutex>
+#include <stdexcept>
 #include <vector>
 //---------------------------------------------------------------------------
 // AnyBlob - Universal Cloud Object Storage Library
@@ -28,7 +29,7 @@ class UnorderedMap {
 
         /// The constructor
         template <class K, class V>
-        constexpr ValueBucket(K&& key, V&& value) : keyValue(std::forward<Key>(key), std::forward<Value>(value)), chain(nullptr) {}
+        ValueBucket(K&& key, V&& value) : keyValue(std::forward<Key>(key), std::forward<Value>(value)), chain(nullptr) {}
     };
 
     /// This bucket is used to build the base table and includes the chain locks
@@ -41,7 +42,7 @@ class UnorderedMap {
         std::shared_mutex sharedMutex;
 
         /// The constructor
-        constexpr TableBucket(std::unique_ptr<ValueBucket> chain = nullptr, TableBucket* next = nullptr) : chain(move(chain)), next(next), sharedMutex() {}
+        TableBucket(std::unique_ptr<ValueBucket> chain = nullptr, TableBucket* next = nullptr) : chain(move(chain)), next(next), sharedMutex() {}
     };
 
     /// The base table of the map
@@ -67,7 +68,7 @@ class UnorderedMap {
         ValueBucket* _valueBucket;
 
         /// Releases buckets, lock and unlocks if hold
-        constexpr inline void release() {
+        inline void release() {
             _tableBucket = nullptr;
             _valueBucket = nullptr;
             if (_lock.owns_lock())
@@ -76,11 +77,11 @@ class UnorderedMap {
 
         public:
         /// The constructor
-        constexpr Iterator(TableBucket* tableBucket = nullptr, ValueBucket* valueBucket = nullptr) : _tableBucket(tableBucket), _lock(), _valueBucket(valueBucket) {}
+        Iterator(TableBucket* tableBucket = nullptr, ValueBucket* valueBucket = nullptr) : _tableBucket(tableBucket), _lock(), _valueBucket(valueBucket) {}
         /// The destructor
         ~Iterator() { release(); }
         /// Copy constructor
-        constexpr Iterator(Iterator& rhs) {
+        Iterator(Iterator& rhs) {
             release();
             _tableBucket = rhs._tableBucket;
             _valueBucket = rhs._valueBucket;
@@ -88,7 +89,7 @@ class UnorderedMap {
                 _lock = std::shared_lock(_tableBucket->sharedMutex);
         }
         /// Copy assignment constructor
-        constexpr Iterator& operator=(Iterator& rhs) {
+        Iterator& operator=(Iterator& rhs) {
             release();
             _tableBucket = rhs._tableBucket;
             _valueBucket = rhs._valueBucket;
@@ -98,24 +99,24 @@ class UnorderedMap {
         }
 
         /// Equality operator
-        [[nodiscard]] constexpr bool operator==(const Iterator& rhs) const {
+        [[nodiscard]] bool operator==(const Iterator& rhs) const {
             return (_tableBucket == rhs._tableBucket) && (_valueBucket == rhs._valueBucket);
         }
         /// Non equality operator
-        [[nodiscard]] constexpr bool operator!=(const Iterator& rhs) const {
+        [[nodiscard]] bool operator!=(const Iterator& rhs) const {
             return (_tableBucket != rhs._tableBucket) || (_valueBucket != rhs._valueBucket);
         }
         /// Get the value bucket reference
-        [[nodiscard]] constexpr std::pair<Key, Value>& operator*() const {
+        [[nodiscard]] std::pair<Key, Value>& operator*() const {
             return _valueBucket->keyValue;
         }
         /// Get the value bucket pointer
-        [[nodiscard]] constexpr std::pair<Key, Value>* operator->() const {
+        [[nodiscard]] std::pair<Key, Value>* operator->() const {
             return &_valueBucket->keyValue;
         }
 
         /// The advance function of the forward iterator
-        constexpr Iterator& operator++() {
+        Iterator& operator++() {
             throw std::runtime_error("advancing an iterator is not implemented");
         }
     };
@@ -124,7 +125,7 @@ class UnorderedMap {
     friend UnorderedMap<Key, Value, Hash>::Iterator;
 
     /// The constructor
-    constexpr UnorderedMap(size_t bucketCount) : _map(), _size() {
+    UnorderedMap(size_t bucketCount) : _map(), _size() {
         /// No resizing afterwards
         _map.reserve(bucketCount);
         /// Default init the table buckets
@@ -137,18 +138,18 @@ class UnorderedMap {
     }
 
     /// The non-const begin iterator
-    [[nodiscard]] constexpr Iterator begin() { return Iterator(_map[0].get()); }
+    [[nodiscard]] Iterator begin() { return Iterator(_map[0].get()); }
     /// The non-const end iterator
-    [[nodiscard]] constexpr Iterator end() { return Iterator(); }
+    [[nodiscard]] Iterator end() { return Iterator(); }
 
     /// Returns the number of buckets
-    [[nodiscard]] constexpr size_t buckets() const { return _map.size(); }
+    [[nodiscard]] size_t buckets() const { return _map.size(); }
     /// Returns the size of the unordered map
-    [[nodiscard]] constexpr size_t size() const { return _size; }
+    [[nodiscard]] size_t size() const { return _size; }
 
     /// Insert element, returns iterator
     template <class K, class V>
-    [[nodiscard("Use push instead for better performance")]] constexpr Iterator insert(K&& key, V&& value) {
+    [[nodiscard("Use push instead for better performance")]] Iterator insert(K&& key, V&& value) {
         {
             auto position = Hash{}(key) % buckets();
             std::unique_lock lock(_map[position]->sharedMutex);
@@ -166,7 +167,7 @@ class UnorderedMap {
 
     /// Insert element, returns true or false on matching key
     template <class K, class V>
-    constexpr bool push(K&& key, V&& value) {
+    bool push(K&& key, V&& value) {
         {
             auto position = Hash{}(key) % buckets();
             std::unique_lock lock(_map[position]->sharedMutex);
@@ -184,7 +185,7 @@ class UnorderedMap {
 
     /// Erase element
     template <class K>
-    [[nodiscard]] constexpr bool erase(K&& key) {
+    [[nodiscard]] bool erase(K&& key) {
         auto position = Hash{}(key) % buckets();
         std::unique_lock lock(_map[position]->sharedMutex);
         auto* chain = &_map[position]->chain;
@@ -200,7 +201,7 @@ class UnorderedMap {
     }
 
     /// Erase element from iterator
-    [[nodiscard]] constexpr bool erase(Iterator it) {
+    [[nodiscard]] bool erase(Iterator it) {
         auto key = it->first;
         it.release();
         return erase(std::move(key));
@@ -208,7 +209,7 @@ class UnorderedMap {
 
     /// Find element, returns iterator
     template <class K>
-    [[nodiscard]] constexpr Iterator find(K&& key) {
+    [[nodiscard]] Iterator find(K&& key) {
         auto position = Hash{}(key) % buckets();
         std::shared_lock lock(_map[position]->sharedMutex);
         auto* chain = &_map[position]->chain;

@@ -1,4 +1,5 @@
 #include "network/http_request.hpp"
+#include "utils/compat.hpp"
 #include "utils/data_vector.hpp"
 #include "utils/utils.hpp"
 #include <map>
@@ -50,16 +51,16 @@ HttpRequest HttpRequest::deserialize(string_view data)
         if (firstLine) {
             firstLine = false;
             // parse method
-            if (line.starts_with(strGet)) {
+            if (compat::startsWith(line, strGet)) {
                 request.method = Method::GET;
                 line = line.substr(strGet.size());
-            } else if (line.starts_with(strPost)) {
+            } else if (compat::startsWith(line, strPost)) {
                 request.method = Method::POST;
                 line = line.substr(strPost.size());
-            } else if (line.starts_with(strPut)) {
+            } else if (compat::startsWith(line, strPut)) {
                 request.method = Method::PUT;
                 line = line.substr(strPut.size());
-            } else if (line.starts_with(strDelete)) {
+            } else if (compat::startsWith(line, strDelete)) {
                 request.method = Method::DELETE;
                 line = line.substr(strDelete.size());
             } else {
@@ -108,9 +109,9 @@ HttpRequest HttpRequest::deserialize(string_view data)
             }
 
             // the http type
-            if (line.starts_with(strHttp1_0)) {
+            if (compat::startsWith(line, strHttp1_0)) {
                 request.type = Type::HTTP_1_0;
-            } else if (line.starts_with(strHttp1_1)) {
+            } else if (compat::startsWith(line, strHttp1_1)) {
                 request.type = Type::HTTP_1_1;
             } else {
                 throw runtime_error("Invalid HttpRequest: Needs to be a HTTP type 1.0 or 1.1!");

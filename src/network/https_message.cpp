@@ -2,6 +2,7 @@
 #include "network/connection_manager.hpp"
 #include "network/http_response.hpp"
 #include "network/message_result.hpp"
+#include "utils/compat.hpp"
 #include "utils/data_vector.hpp"
 #include <cassert>
 #include <memory>
@@ -96,7 +97,7 @@ MessageState HTTPSMessage::execute(ConnectionManager& connectionManager)
         case MessageState::Receiving: {
             auto& receive = originalMessage->result.getDataVector();
             int64_t result = 0;
-            assert(in_range<int64_t>(chunkSize));
+            assert(compat::inRange<int64_t>(chunkSize));
             auto status = tlsLayer->recv(connectionManager, reinterpret_cast<char*>(receive.data() + receiveBufferOffset), static_cast<int64_t>(chunkSize), result);
             state = MessageState::Receiving;
             if (status == TLSConnection::Progress::Finished) {

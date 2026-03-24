@@ -1,3 +1,4 @@
+#include "utils/compat.hpp"
 #include "network/tls_connection.hpp"
 #include "network/https_message.hpp"
 #include "network/tls_context.hpp"
@@ -109,7 +110,7 @@ TLSConnection::Progress TLSConnection::operationHelper(ConnectionManager& connec
 TLSConnection::Progress TLSConnection::recv(ConnectionManager& connectionManager, char* buffer, int64_t bufferLength, int64_t& resultLength)
 // Recv a TLS encrypted message
 {
-    assert(in_range<int>(bufferLength));
+    assert(compat::inRange<int>(bufferLength));
     auto ssl = this->_ssl;
     auto sslRead = [ssl, buffer, bufferLength = static_cast<int>(bufferLength)]() {
         return SSL_read(ssl, buffer, bufferLength);
@@ -120,7 +121,7 @@ TLSConnection::Progress TLSConnection::recv(ConnectionManager& connectionManager
 TLSConnection::Progress TLSConnection::send(ConnectionManager& connectionManager, const char* buffer, int64_t bufferLength, int64_t& resultLength)
 // Send a TLS encrypted message
 {
-    assert(in_range<int>(bufferLength));
+    assert(compat::inRange<int>(bufferLength));
     auto ssl = this->_ssl;
     auto sslWrite = [ssl, buffer, bufferLength = static_cast<int>(bufferLength)]() {
         return SSL_write(ssl, buffer, bufferLength);
@@ -154,7 +155,7 @@ TLSConnection::Progress TLSConnection::shutdown(ConnectionManager& connectionMan
     if (status == Progress::Finished) {
         _context.cacheSession(_message->fd, ssl);
     } else if (status == Progress::Aborted) {
-        if (!failedOnce) [[likely]] {
+        if (!failedOnce) ANYBLOB_LIKELY {
             return shutdown(connectionManager, true);
         } else {
             _context.dropSession(_message->fd);
@@ -173,7 +174,7 @@ TLSConnection::Progress TLSConnection::process(ConnectionManager& connectionMana
             _state.internalBioWrite = BIO_ctrl_pending(_networkBio);
             if (_state.internalBioWrite) {
                 auto readSize = _message->chunkSize > _state.internalBioWrite ? _state.internalBioWrite : _message->chunkSize;
-                assert(in_range<int>(readSize));
+                assert(compat::inRange<int>(readSize));
                 _state.networkBioRead = BIO_read(_networkBio, _buffer.get(), static_cast<int>(readSize));
             }
         } // fallthrough
@@ -200,7 +201,7 @@ TLSConnection::Progress TLSConnection::process(ConnectionManager& connectionMana
                     _state.progress = Progress::Sending;
                     auto writeSize = static_cast<size_t>(_state.networkBioRead) - _state.socketWrite;
                     const uint8_t* ptr = reinterpret_cast<uint8_t*>(_buffer.get()) + _state.socketWrite;
-                    _message->request = std::make_unique<Socket::Request>(Socket::Request{.data = {.cdata = ptr}, .length = static_cast<int64_t>(writeSize), .fd = _message->fd, .event = Socket::EventType::write, .messageTask = _message});
+                    _message->request = std::make_unique<Socket::Request>(Socket::Request::forSend(ptr, static_cast<int64_t>(writeSize), _message->fd, _message));
                     if (writeSize <= _message->chunkSize)
                         connectionManager.getSocketConnection().send_to(*_message->request, _message->tcpSettings.timeout);
                     else
@@ -227,7 +228,7 @@ TLSConnection::Progress TLSConnection::process(ConnectionManager& connectionMana
                         _state.progress = Progress::Aborted;
                         return _state.progress;
                     } else if (_message->request->length > 0) {
-                        assert(in_range<int>(_message->request->length));
+                        assert(compat::inRange<int>(_message->request->length));
                         _state.networkBioWrite += BIO_write(_networkBio, _buffer.get() + _state.socketRead, static_cast<int>(_message->request->length));
                         _state.socketRead += static_cast<size_t>(_message->request->length);
                         assert(_state.networkBioWrite >= 0 && static_cast<size_t>(_state.networkBioWrite) == _state.socketRead);
@@ -244,8 +245,8 @@ TLSConnection::Progress TLSConnection::process(ConnectionManager& connectionMana
                     _state.progress = Progress::Receiving;
                     uint64_t readSize = _message->chunkSize > (_state.internalBioRead - _state.socketRead) ? _state.internalBioRead - _state.socketRead : _message->chunkSize;
                     uint8_t* ptr = reinterpret_cast<uint8_t*>(_buffer.get()) + _state.socketRead;
-                    assert(in_range<int64_t>(readSize));
-                    _message->request = std::make_unique<Socket::Request>(Socket::Request{.data = {.data = ptr}, .length = static_cast<int64_t>(readSize), .fd = _message->fd, .event = Socket::EventType::read, .messageTask = _message});
+                    assert(compat::inRange<int64_t>(readSize));
+                    _message->request = std::make_unique<Socket::Request>(Socket::Request::forRecv(ptr, static_cast<int64_t>(readSize), _message->fd, _message));
                     connectionManager.getSocketConnection().recv_to(*_message->request, _message->tcpSettings.timeout, _message->tcpSettings.recvNoWait ? MSG_DONTWAIT : 0);
                     return _state.progress;
                 } else {

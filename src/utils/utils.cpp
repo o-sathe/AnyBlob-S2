@@ -1,4 +1,5 @@
 #include "utils/utils.hpp"
+#include "utils/compat.hpp"
 #include <cassert>
 #include <stdexcept>
 #include <utility>
@@ -28,7 +29,7 @@ namespace anyblob::utils {
 string base64Encode(const uint8_t* input, uint64_t length)
 // Encodes a string as a base64 string
 {
-    assert(in_range<int>(length));
+    assert(compat::inRange<int>(length));
     auto baseLength = 4 * ((length + 2) / 3);
     auto buffer = make_unique<char[]>(baseLength + 1);
     auto encodeLength = EVP_EncodeBlock(reinterpret_cast<unsigned char*>(buffer.get()), input, static_cast<int>(length));
@@ -40,7 +41,7 @@ string base64Encode(const uint8_t* input, uint64_t length)
 pair<unique_ptr<uint8_t[]>, uint64_t> base64Decode(const uint8_t* input, uint64_t length)
 // Decodes from base64 to raw string
 {
-    assert(in_range<int>(length));
+    assert(compat::inRange<int>(length));
     auto baseLength = 3 * length / 4;
     auto buffer = make_unique<uint8_t[]>(baseLength + 1);
     if (!length) {
@@ -166,7 +167,7 @@ pair<unique_ptr<uint8_t[]>, uint64_t> hmacSign(const uint8_t* keyData, uint64_t 
 pair<unique_ptr<uint8_t[]>, uint64_t> rsaSign(const uint8_t* keyData, uint64_t keyLength, const uint8_t* msgData, uint64_t msgLength)
 // Encodes the msg with the key with rsa
 {
-    assert(in_range<int>(keyLength));
+    assert(compat::inRange<int>(keyLength));
     unique_ptr<BIO, decltype(&BIO_free_all)> keybio(BIO_new_mem_buf(reinterpret_cast<const void*>(keyData), static_cast<int>(keyLength)), BIO_free_all);
     if (!keybio)
         throw runtime_error("OpenSSL Error - No Buffer Mem!");
@@ -199,7 +200,7 @@ pair<unique_ptr<uint8_t[]>, uint64_t> rsaSign(const uint8_t* keyData, uint64_t k
 uint64_t aesDecrypt(const unsigned char* key, const unsigned char* iv, const uint8_t* encData, uint64_t encLength, uint8_t* plainData)
 // Decrypt with AES
 {
-    assert(in_range<int>(encLength));
+    assert(compat::inRange<int>(encLength));
     int len;
     uint64_t plainLength;
 
@@ -212,12 +213,12 @@ uint64_t aesDecrypt(const unsigned char* key, const unsigned char* iv, const uin
 
     if (EVP_DecryptUpdate(ctx.get(), plainData, &len, reinterpret_cast<const unsigned char*>(encData), static_cast<int>(encLength)) <= 0)
         throw runtime_error("OpenSSL Decrypt Error!");
-    assert(in_range<unsigned>(len));
+    assert(compat::inRange<unsigned>(len));
     plainLength = static_cast<unsigned>(len);
 
     if (EVP_DecryptFinal(ctx.get(), plainData + len, &len) <= 0)
         throw runtime_error("OpenSSL Decrypt Final Error!");
-    assert(in_range<unsigned>(len));
+    assert(compat::inRange<unsigned>(len));
     plainLength += static_cast<unsigned>(len);
 
     return plainLength;
@@ -226,7 +227,7 @@ uint64_t aesDecrypt(const unsigned char* key, const unsigned char* iv, const uin
 uint64_t aesEncrypt(const unsigned char* key, const unsigned char* iv, const uint8_t* plainData, uint64_t plainLength, uint8_t* encData)
 // Encrypt with AES
 {
-    assert(in_range<int>(plainLength));
+    assert(compat::inRange<int>(plainLength));
     int len;
     uint64_t encLength;
 
@@ -239,12 +240,12 @@ uint64_t aesEncrypt(const unsigned char* key, const unsigned char* iv, const uin
 
     if (EVP_EncryptUpdate(ctx.get(), encData, &len, reinterpret_cast<const unsigned char*>(plainData), static_cast<int>(plainLength)) <= 0)
         throw runtime_error("OpenSSL Encrypt Error!");
-    assert(in_range<unsigned>(len));
+    assert(compat::inRange<unsigned>(len));
     encLength = static_cast<unsigned>(len);
 
     if (EVP_EncryptFinal(ctx.get(), encData + len, &len) <= 0)
         throw runtime_error("OpenSSL Encrypt Final Error!");
-    assert(in_range<unsigned>(len));
+    assert(compat::inRange<unsigned>(len));
     encLength += static_cast<unsigned>(len);
 
     return encLength;

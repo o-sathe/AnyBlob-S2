@@ -9,7 +9,6 @@
 #include <memory>
 #include <mutex>
 #include <queue>
-#include <span>
 #include <thread>
 #include <vector>
 //---------------------------------------------------------------------------
@@ -73,7 +72,7 @@ class TaskedSendReceiverGroup {
     /// Adds a message to the submission queue
     [[nodiscard]] bool send(OriginalMessage* msg);
     /// Adds a span of message to the submission queue
-    [[nodiscard]] bool send(std::span<OriginalMessage*> msgs);
+    [[nodiscard]] bool send(compat::Span<OriginalMessage*> msgs);
     /// Gets a tasked send receiver deamon
     [[nodiscard]] TaskedSendReceiverHandle getHandle();
     /// Submits group queue and waits for result
